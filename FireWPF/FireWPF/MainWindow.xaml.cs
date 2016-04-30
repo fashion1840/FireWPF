@@ -31,12 +31,14 @@ namespace FireWPF
         const int wind = 0;
         const int flame = 15;
         readonly Int32Rect rect = new Int32Rect(0, 0, width, height);
-        readonly Random random = new Random();
+        readonly MyRandom random = new MyRandom(85533);
         readonly WriteableBitmap bitmap = new WriteableBitmap(width, height, 96, 96, PixelFormats.Bgr32, null);
         readonly List<int> fpsList = new List<int>();
         readonly int ptr;
         readonly Thread t;
+
         DateTime lastUpdate;
+        int cursorX = 200, cursorY = 200;
 
         public MainWindow()
         {
@@ -53,11 +55,11 @@ namespace FireWPF
             }
             bitmap.AddDirtyRect(rect);
             bitmap.Unlock();
-            imageControl.Source = bitmap;            
-            lastUpdate = DateTime.Now;            
+            imageControl.Source = bitmap;
+            lastUpdate = DateTime.Now;
 
             t = new Thread(() =>
-            {                
+            {
                 while (true)
                 {
                     int duration = (int)(DateTime.Now - lastUpdate).TotalMilliseconds;
@@ -72,7 +74,7 @@ namespace FireWPF
                     lastUpdate = DateTime.Now;
 
 
-                    int i, color;
+                    int i, j, color;
                     int last = (width * (height - 1) - gher + 1) * 4 + ptr;
 
                     unsafe
@@ -86,10 +88,16 @@ namespace FireWPF
 
                             *((int*)(i + (random.Next(gher) - wind) * 4)) = color;
                         }
+
+                        for (i = cursorX - 10; i < cursorX + 10; i++)
+                            if (i >= 0 && i < width)
+                                for (j = cursorY - 10; j < cursorY + 10; j++)
+                                    if (j >= 0 && j < height && Math.Pow(i - cursorX, 2) + Math.Pow(j - cursorY, 2) <= 100)
+                                        *((int*)((j * width + i) * 4 + ptr)) = yellow;
                     }
 
                     Dispatcher.BeginInvoke(new Action(() =>
-                    {                        
+                    {
                         bitmap.Lock();
                         bitmap.AddDirtyRect(rect);
                         bitmap.Unlock();
@@ -98,7 +106,7 @@ namespace FireWPF
                 }
             });
             t.Start();
-        }        
+        }
 
         int NextColor(int color)
         {
@@ -143,6 +151,13 @@ namespace FireWPF
         private void Window_Closed(object sender, EventArgs e)
         {
             t.Abort();
+        }
+
+        private void imageControl_MouseMove(object sender, MouseEventArgs e)
+        {
+            Point p = e.GetPosition(imageControl);
+            cursorX = (int)(p.X * width / imageControl.ActualWidth);
+            cursorY = (int)(p.Y * height / imageControl.ActualHeight);
         }
     }
 }

@@ -5,8 +5,8 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:FireWPF"
         mc:Ignorable="d"
-        Title="Fire" Background="Black" Cursor="None" Loaded="Window_Loaded" 
+        Title="Fire" Background="Black" Loaded="Window_Loaded" 
         SizeToContent="WidthAndHeight" Closed="Window_Closed" 
         WindowStartupLocation="CenterScreen">
-    <Image Name="imageControl" Width="400" Height="400"/>
+    <Image Name="imageControl" Width="400" Height="400" MouseMove="imageControl_MouseMove" Cursor="None"/>
 </Window>
