@@ -32,13 +32,12 @@ namespace FireWPF
         const int flame = 15;
         readonly Int32Rect rect = new Int32Rect(0, 0, width, height);
         readonly MyRandom random = new MyRandom(85533);
-        readonly WriteableBitmap bitmap = new WriteableBitmap(width, height, 96, 96, PixelFormats.Bgr32, null);
-        readonly List<int> fpsList = new List<int>();
+        readonly WriteableBitmap bitmap = new WriteableBitmap(width, height, 96, 96, PixelFormats.Bgr32, null);        
         readonly int ptr;
         readonly Thread t;
-
-        DateTime lastUpdate;
+        
         int cursorX = 200, cursorY = 200;
+        int framesShown = 0;
 
         public MainWindow()
         {
@@ -56,24 +55,16 @@ namespace FireWPF
             bitmap.AddDirtyRect(rect);
             bitmap.Unlock();
             imageControl.Source = bitmap;
-            lastUpdate = DateTime.Now;
+
+            DispatcherTimer timer = new DispatcherTimer();
+            timer.Interval = new TimeSpan(0,0,1);
+            timer.Tick += Timer_Tick;
+            timer.Start();
 
             t = new Thread(() =>
             {
                 while (true)
-                {
-                    int duration = (int)(DateTime.Now - lastUpdate).TotalMilliseconds;
-                    int fps = 1000 / ++duration;
-                    fpsList.Add(fps);
-                    if (fpsList.Count > 500)
-                        fpsList.RemoveAt(0);
-                    long sum = 0;
-                    foreach (int f in fpsList)
-                        sum += f;
-                    fps = (int)(sum / fpsList.Count);
-                    lastUpdate = DateTime.Now;
-
-
+                {                    
                     int i, j, color;
                     int last = (width * (height - 1) - gher + 1) * 4 + ptr;
 
@@ -95,17 +86,23 @@ namespace FireWPF
                                     if (j >= 0 && j < height && Math.Pow(i - cursorX, 2) + Math.Pow(j - cursorY, 2) <= 100)
                                         *((int*)((j * width + i) * 4 + ptr)) = yellow;
                     }
+                    framesShown++;
 
                     Dispatcher.BeginInvoke(new Action(() =>
                     {
                         bitmap.Lock();
                         bitmap.AddDirtyRect(rect);
-                        bitmap.Unlock();
-                        Title = "Fire - FPS: " + fps;
+                        bitmap.Unlock();                        
                     }));
                 }
             });
             t.Start();
+        }
+
+        private void Timer_Tick(object sender, EventArgs e)
+        {
+            Title = "Fire - FPS: " + framesShown;
+            framesShown = 0;
         }
 
         int NextColor(int color)
