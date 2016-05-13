@@ -32,11 +32,11 @@ namespace FireWPF
         const int flame = 15;
         readonly Int32Rect rect = new Int32Rect(0, 0, width, height);
         readonly MyRandom random = new MyRandom(85533);
-        readonly WriteableBitmap bitmap = new WriteableBitmap(width, height, 96, 96, PixelFormats.Bgr32, null);        
+        readonly WriteableBitmap bitmap = new WriteableBitmap(width, height, 96, 96, PixelFormats.Bgr32, null);
         readonly int ptr;
         readonly Thread t;
-        
-        int cursorX = 200, cursorY = 200;
+        readonly List<int> cursorX = new List<int>();
+        readonly List<int> cursorY = new List<int>();
         int framesShown = 0;
 
         public MainWindow()
@@ -57,14 +57,14 @@ namespace FireWPF
             imageControl.Source = bitmap;
 
             DispatcherTimer timer = new DispatcherTimer();
-            timer.Interval = new TimeSpan(0,0,1);
+            timer.Interval = new TimeSpan(0, 0, 1);
             timer.Tick += Timer_Tick;
             timer.Start();
 
             t = new Thread(() =>
             {
                 while (true)
-                {                    
+                {
                     int i, j, color;
                     int last = (width * (height - 1) - gher + 1) * 4 + ptr;
 
@@ -80,11 +80,17 @@ namespace FireWPF
                             *((int*)(i + (random.Next(gher) - wind) * 4)) = color;
                         }
 
-                        for (i = cursorX - 10; i < cursorX + 10; i++)
-                            if (i >= 0 && i < width)
-                                for (j = cursorY - 10; j < cursorY + 10; j++)
-                                    if (j >= 0 && j < height && Math.Pow(i - cursorX, 2) + Math.Pow(j - cursorY, 2) <= 100)
-                                        *((int*)((j * width + i) * 4 + ptr)) = yellow;
+                        for (int k = 0; k < cursorX.Count; k++)
+                            for (i = cursorX[k] - 10; i < cursorX[k] + 10; i++)
+                                if (i >= 0 && i < width)
+                                    for (j = cursorY[k] - 10; j < cursorY[k] + 10; j++)
+                                        if (j >= 0 && j < height && Math.Pow(i - cursorX[k], 2) + Math.Pow(j - cursorY[k], 2) <= 100)
+                                            *((int*)((j * width + i) * 4 + ptr)) = yellow;
+                        if (cursorX.Count > 1)
+                        {
+                            cursorX.RemoveRange(0, cursorX.Count - 1);
+                            cursorY.RemoveRange(0, cursorY.Count - 1);
+                        }
                     }
                     framesShown++;
 
@@ -92,7 +98,7 @@ namespace FireWPF
                     {
                         bitmap.Lock();
                         bitmap.AddDirtyRect(rect);
-                        bitmap.Unlock();                        
+                        bitmap.Unlock();
                     }));
                 }
             });
@@ -153,8 +159,8 @@ namespace FireWPF
         private void imageControl_MouseMove(object sender, MouseEventArgs e)
         {
             Point p = e.GetPosition(imageControl);
-            cursorX = (int)(p.X * width / imageControl.ActualWidth);
-            cursorY = (int)(p.Y * height / imageControl.ActualHeight);
+            cursorX.Add((int)(p.X * width / imageControl.ActualWidth));
+            cursorY.Add((int)(p.Y * height / imageControl.ActualHeight));
         }
     }
 }
